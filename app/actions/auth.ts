@@ -28,8 +28,11 @@ export async function signupAction(_prev: ActionState, formData: FormData): Prom
       return { error: 'Ce courriel est déjà utilisé.' };
     }
     console.error('[signup] createUser failed:', e);
-    const detail = e instanceof Error ? e.message : 'unknown';
-    return { error: `Erreur lors de la création du compte : ${detail}` };
+    // postgres-js wraps the underlying error in `cause`
+    const root = e instanceof Error && e.cause instanceof Error ? e.cause : e;
+    const detail = root instanceof Error ? root.message : 'unknown';
+    const code = (root as { code?: string })?.code;
+    return { error: `Erreur : ${detail}${code ? ` [${code}]` : ''}` };
   }
 
   await signIn('credentials', {

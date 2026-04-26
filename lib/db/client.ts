@@ -10,9 +10,12 @@ function getDb(): PostgresJsDatabase<typeof schema> {
   if (!url) {
     throw new Error('DATABASE_URL is not set');
   }
-  // Supabase transaction pooler requires prepare:false (no prepared statements)
-  const client = postgres(url, { prepare: false });
-  _db = drizzle(client, { schema });
+  const client = postgres(url, {
+    prepare: false,
+    ssl: 'require',
+    max: 1,
+  });
+  _db = drizzle(client, { schema, logger: process.env.NODE_ENV !== 'production' });
   return _db;
 }
 
