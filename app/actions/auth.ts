@@ -27,7 +27,9 @@ export async function signupAction(_prev: ActionState, formData: FormData): Prom
     if (e instanceof Error && e.message === 'EMAIL_TAKEN') {
       return { error: 'Ce courriel est déjà utilisé.' };
     }
-    return { error: 'Erreur lors de la création du compte.' };
+    console.error('[signup] createUser failed:', e);
+    const detail = e instanceof Error ? e.message : 'unknown';
+    return { error: `Erreur lors de la création du compte : ${detail}` };
   }
 
   await signIn('credentials', {
