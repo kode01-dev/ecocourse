@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import Link from 'next/link';
 import { logoutAction } from '@/app/actions/auth';
 import GenerateButton from './GenerateButton';
+import AdminTools from './AdminTools';
 
 export default async function AppHomePage() {
   const session = await auth();
@@ -35,7 +36,9 @@ export default async function AppHomePage() {
           </Link>
         </div>
 
-        <form action={logoutAction} className="mt-12 text-center">
+        <AdminTools />
+
+        <form action={logoutAction} className="mt-8 text-center">
           <button type="submit" className="text-sm text-neutral-400 hover:text-neutral-600 underline">
             Se déconnecter
           </button>
