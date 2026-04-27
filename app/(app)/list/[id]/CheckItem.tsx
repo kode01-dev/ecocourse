@@ -12,9 +12,10 @@ interface Props {
   regularPrice: string | null;
   checked: boolean;
   storeName: string | null;
+  onSale: boolean;
 }
 
-export default function CheckItem({ id, label, quantity, unit, price, regularPrice, checked, storeName }: Props) {
+export default function CheckItem({ id, label, quantity, unit, price, regularPrice, checked, storeName, onSale }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const savings = price && regularPrice
@@ -37,8 +38,10 @@ export default function CheckItem({ id, label, quantity, unit, price, regularPri
         <p className={`text-sm font-medium capitalize ${checked ? 'line-through text-neutral-400' : 'text-neutral-800'}`}>
           {label}
           {quantity && unit && <span className="text-neutral-400 font-normal"> · {quantity} {unit}</span>}
+          {onSale && !checked && <span className="ml-1.5 text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-medium">rabais</span>}
         </p>
         {storeName && <p className="text-xs text-neutral-400 mt-0.5">{storeName}</p>}
+        {!onSale && !checked && <p className="text-xs text-neutral-400 mt-0.5">Prix régulier</p>}
       </div>
       <div className="text-right flex-shrink-0">
         {price && <p className="text-sm font-semibold text-neutral-800">{Number(price).toFixed(2)} $</p>}

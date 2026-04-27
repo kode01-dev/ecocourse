@@ -9,10 +9,23 @@ export interface NormalizedIngredient {
 
 // Normalize up to 50 ingredient names per call.
 // Uses prompt caching on the system prompt to reduce cost on repeated batches.
+function fallbackMap(names: string[]): Map<string, NormalizedIngredient> {
+  const map = new Map<string, NormalizedIngredient>();
+  for (const n of names) {
+    map.set(n, { normalized: n.toLowerCase().trim(), category: 'autre', unit: null });
+  }
+  return map;
+}
+
 export async function normalizeIngredients(
   names: string[]
 ): Promise<Map<string, NormalizedIngredient>> {
   if (names.length === 0) return new Map();
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.warn('[normalize] ANTHROPIC_API_KEY not set — skipping normalization, using raw names');
+    return fallbackMap(names);
+  }
 
   const client = getAnthropicClient();
 

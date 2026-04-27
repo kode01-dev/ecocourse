@@ -1,5 +1,5 @@
 import 'server-only';
-import { eq, gte, and } from 'drizzle-orm';
+import { eq, gte, and, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   stores,
@@ -107,6 +107,17 @@ export async function ensureMockDeals(storeList: { id: string; slug: string }[])
   }
 }
 
+// French food categories Claude assigns + English L2 fallbacks from Flipp
+const FOOD_CATEGORY_LIST = [
+  'fruits', 'légumes', 'viandes', 'poissons', 'fruits de mer',
+  'produits laitiers', 'fromages', 'boulangerie', 'épicerie',
+  'boissons', 'condiments', 'surgelés', 'protéines végé', 'charcuterie',
+  'autre',
+  // Raw Flipp English values that can appear when Claude normalizes as-is
+  'food items', 'beverages', 'fresh food', 'meat', 'seafood', 'dairy',
+  'bakery', 'snacks', 'candy', 'frozen foods', 'produce', 'frozen',
+];
+
 export async function getActiveDeals() {
   const today = new Date().toISOString().split('T')[0];
   return db
@@ -124,22 +135,41 @@ export async function getActiveDeals() {
     .from(deals)
     .innerJoin(products, eq(deals.productId, products.id))
     .innerJoin(stores, eq(deals.storeId, stores.id))
-    .where(gte(deals.validTo, today));
+    .where(
+      and(
+        gte(deals.validTo, today),
+        sql`lower(coalesce(${products.category}, 'autre')) = ANY(ARRAY[${sql.raw(
+          FOOD_CATEGORY_LIST.map((c) => `'${c.replace(/'/g, "''")}'`).join(',')
+        )}])`
+      )
+    );
+}
+
+// Delete ALL current deals so a fresh scrape starts clean.
+// Called before each weekly refresh to avoid accumulating stale/non-food data.
+export async function clearAllDeals(): Promise<number> {
+  const result = await db.delete(deals);
+  return (result as unknown as { rowCount?: number }).rowCount ?? 0;
+}
+
+export interface ListItemInput {
+  productId: string | null;
+  storeId: string | null;
+  dealId: string | null;
+  ingredientLabel: string;
+  quantity: string | null;
+  unit: string | null;
+  recipeIds: string[];
+  recipeLabel: string | null; // recipe name for grouping in the UI
 }
 
 export async function createShoppingList(
   userId: string,
   mode: 'single_store' | 'multi_store',
-  items: {
-    productId: string;
-    storeId: string;
-    dealId: string;
-    ingredientLabel: string;
-    quantity: string;
-    unit: string | null;
-  }[],
+  items: ListItemInput[],
   totalCost: string,
-  totalSavings: string
+  totalSavings: string,
+  recipeCount: number = 0
 ) {
   const [list] = await db
     .insert(shoppingLists)
@@ -150,12 +180,13 @@ export async function createShoppingList(
     await db.insert(shoppingListItems).values(
       items.map((item) => ({
         listId: list.id,
-        productId: item.productId,
-        storeId: item.storeId,
-        dealId: item.dealId,
+        productId: item.productId ?? undefined,
+        storeId: item.storeId ?? undefined,
+        dealId: item.dealId ?? undefined,
         ingredientLabel: item.ingredientLabel,
-        quantity: item.quantity,
+        quantity: item.quantity ?? undefined,
         unit: item.unit,
+        recipeIds: item.recipeIds,
       }))
     );
   }
@@ -179,9 +210,12 @@ export async function getShoppingList(listId: string, userId: string) {
       quantity: shoppingListItems.quantity,
       unit: shoppingListItems.unit,
       checked: shoppingListItems.checked,
+      recipeIds: shoppingListItems.recipeIds,
       price: deals.price,
       regularPrice: deals.regularPrice,
       storeName: stores.name,
+      storeId: shoppingListItems.storeId,
+      dealId: shoppingListItems.dealId,
     })
     .from(shoppingListItems)
     .leftJoin(deals, eq(shoppingListItems.dealId, deals.id))

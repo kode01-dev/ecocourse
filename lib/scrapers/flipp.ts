@@ -5,6 +5,23 @@ const RATE_LIMIT_MS = 1000;
 
 const TARGET_MERCHANTS = new Set(['IGA', 'Metro', 'Maxi', 'Super C']);
 
+// Only keep items from food-related top-level categories
+const FOOD_L1 = new Set([
+  'Food, Beverages & Tobacco',
+  'Food & Beverages',
+  'Grocery',
+  'Fresh Food',
+  'Meat, Seafood & Eggs',
+  'Produce',
+  'Dairy & Eggs',
+  'Bakery',
+  'Frozen Foods',
+  'Snacks & Candy',
+  'Beverages',
+  'Condiments & Sauces',
+  'Canned & Packaged Goods',
+]);
+
 const MERCHANT_SLUG: Record<string, 'iga' | 'metro' | 'maxi' | 'superc'> = {
   IGA: 'iga',
   Metro: 'metro',
@@ -112,6 +129,9 @@ export async function scrapeFlipp(postalCode: string): Promise<FlippItem[]> {
       if (!item.name) continue;
       const price = item.current_price;
       if (price == null || price <= 0) continue;
+
+      // Skip non-food items
+      if (item._L1 && !FOOD_L1.has(item._L1)) continue;
 
       // Unit hint from post_price_text e.g. "/kg", "/lb"
       const unit = item.post_price_text?.replace('/', '').trim() ?? null;
