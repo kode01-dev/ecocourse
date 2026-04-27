@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { scrapeRicardoRecipes } from '@/lib/scrapers/ricardo';
+import { scrapeTheMealDB } from '@/lib/scrapers/themealdb';
 import { upsertRecipes } from '@/lib/db/queries/recipes';
 
 function verifyCronSecret(req: NextRequest): boolean {
@@ -18,25 +18,23 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  let maxPages = 3;
-  let maxRecipes = 30;
+  let maxRecipes = 100;
   try {
-    const body = await req.json().catch(() => ({})) as { maxPages?: number; maxRecipes?: number };
-    if (body.maxPages) maxPages = Math.min(body.maxPages, 10);
-    if (body.maxRecipes) maxRecipes = Math.min(body.maxRecipes, 100);
+    const body = await req.json().catch(() => ({})) as { maxRecipes?: number };
+    if (body.maxRecipes) maxRecipes = Math.min(body.maxRecipes, 300);
   } catch {
     // use defaults
   }
 
-  console.log(`[recipes/scrape] Starting Ricardo scrape (maxPages=${maxPages}, maxRecipes=${maxRecipes})`);
+  console.log(`[recipes/scrape] Starting TheMealDB scrape (maxRecipes=${maxRecipes})`);
 
   let scraped;
   try {
-    scraped = await scrapeRicardoRecipes(maxPages, maxRecipes);
+    scraped = await scrapeTheMealDB(maxRecipes);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error('[recipes/scrape] Ricardo scrape failed:', msg);
-    return NextResponse.json({ error: `Ricardo scrape failed: ${msg}` }, { status: 502 });
+    console.error('[recipes/scrape] TheMealDB scrape failed:', msg);
+    return NextResponse.json({ error: `TheMealDB scrape failed: ${msg}` }, { status: 502 });
   }
 
   const { inserted, skipped } = await upsertRecipes(scraped);
