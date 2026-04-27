@@ -5,7 +5,7 @@ const BASE = 'https://www.themealdb.com/api/json/v1/1';
 export interface ScrapedRecipe {
   title: string;
   sourceUrl: string;
-  source: 'ricardo';
+  source: 'themealdb';
   servings: number;
   prepTimeMin: number | null;
   cookTimeMin: number | null;
@@ -106,7 +106,7 @@ function mealToRecipe(meal: MealDetail): ScrapedRecipe | null {
   return {
     title: meal.strMeal,
     sourceUrl: meal.strSource ?? `https://www.themealdb.com/meal/${meal.idMeal}`,
-    source: 'ricardo',
+    source: 'themealdb',
     servings: 4,
     prepTimeMin: 15,
     cookTimeMin: 30,

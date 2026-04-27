@@ -43,6 +43,7 @@ export const recipeSourceEnum = pgEnum('recipe_source', [
   'ricardo',
   'trois_fois_par_jour',
   'claude_generated',
+  'themealdb',
 ]);
 
 // ============ Auth ============

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getFullProfile } from '@/lib/db/queries/profiles';
-import { ensureStores, ensureMockDeals, getActiveDeals, createShoppingList } from '@/lib/db/queries/shopping';
+import { getActiveDeals, createShoppingList } from '@/lib/db/queries/shopping';
 import { ensureStoreMap } from '@/lib/db/queries/deals';
 import { matchRecipesToDeals, type DealItem } from '@/lib/matching/recipe-matcher';
 import type { ListItemInput } from '@/lib/db/queries/shopping';
@@ -32,13 +32,13 @@ export async function POST() {
   await ensureStoreMap();
 
   // Get active food deals
-  let allDeals = await getActiveDeals();
+  const allDeals = await getActiveDeals();
 
   if (allDeals.length === 0) {
-    // No real deals yet — seed mock data
-    const storeList = await ensureStores();
-    await ensureMockDeals(storeList);
-    allDeals = await getActiveDeals();
+    return NextResponse.json(
+      { error: 'Aucun rabais disponible. Lance un rafraîchissement depuis les outils admin.' },
+      { status: 422 }
+    );
   }
 
   const allergenSet = new Set(allergies.map((a) => a.allergen));

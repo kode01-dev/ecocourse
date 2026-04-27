@@ -39,7 +39,7 @@ export default function AdminTools() {
           onClick={() => trigger('/api/recipes/scrape', 'recipes')}
           className="w-full py-2 border border-neutral-200 rounded-lg text-xs text-neutral-600 disabled:opacity-50"
         >
-          {loading === 'recipes' ? '⏳ Scrape Ricardo en cours…' : '📖 Importer recettes Ricardo'}
+          {loading === 'recipes' ? '⏳ Import recettes en cours…' : '📖 Importer recettes (TheMealDB)'}
         </button>
         {status && (
           <pre className="text-xs bg-neutral-100 rounded p-2 overflow-auto max-h-40 whitespace-pre-wrap">

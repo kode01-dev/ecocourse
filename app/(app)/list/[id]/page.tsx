@@ -169,7 +169,7 @@ export default async function ListPage({ params }: Props) {
         {!hasRecipes && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
             <p className="font-medium mb-1">Aucune recette disponible</p>
-            <p className="text-xs">Importe les recettes Ricardo depuis le panneau admin pour que la liste soit basée sur des recettes.</p>
+            <p className="text-xs">Importe les recettes depuis le panneau admin pour que la liste soit basée sur des recettes.</p>
           </div>
         )}
 

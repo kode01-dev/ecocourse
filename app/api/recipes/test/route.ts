@@ -3,69 +3,39 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   const steps: Record<string, unknown> = {};
 
-  // Step 1: fetch sitemap
-  const sitemapUrl = 'https://www.ricardocuisine.com/sitemap.recipes-fr.1.xml';
-  let xml = '';
+  // Step 1: fetch categories
   try {
-    const res = await fetch(sitemapUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EcoCourse/1.0)' },
-      cache: 'no-store',
-    });
-    steps.sitemapStatus = res.status;
-    steps.sitemapOk = res.ok;
-    xml = await res.text();
-    steps.sitemapSize = xml.length;
+    const res = await fetch('https://www.themealdb.com/api/json/v1/1/categories.php', { cache: 'no-store' });
+    steps.categoriesStatus = res.status;
+    steps.categoriesOk = res.ok;
+    const data = await res.json() as { categories?: { strCategory: string }[] };
+    steps.categoryCount = data.categories?.length ?? 0;
+    steps.categorySample = data.categories?.slice(0, 3).map((c) => c.strCategory);
   } catch (e) {
-    steps.sitemapError = String(e);
+    steps.categoriesError = String(e);
     return NextResponse.json({ steps });
   }
 
-  // Step 2: extract URLs
-  const matches = xml.match(/<loc>(https:\/\/www\.ricardocuisine\.com\/recettes\/[^<]+)<\/loc>/g) ?? [];
-  steps.urlCount = matches.length;
-  const firstUrl = matches[0]?.replace(/<\/?loc>/g, '');
-  steps.firstUrl = firstUrl;
-
-  if (!firstUrl) return NextResponse.json({ steps });
-
-  // Step 3: fetch one recipe page
-  let html = '';
+  // Step 2: fetch meals by letter 'a'
   try {
-    const res = await fetch(firstUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept-Language': 'fr-CA,fr;q=0.9',
-      },
-      cache: 'no-store',
-    });
-    steps.recipePageStatus = res.status;
-    steps.recipePageOk = res.ok;
-    html = await res.text();
-    steps.recipePageSize = html.length;
-  } catch (e) {
-    steps.recipePageError = String(e);
-    return NextResponse.json({ steps });
-  }
+    const res = await fetch('https://www.themealdb.com/api/json/v1/1/search.php?f=a', { cache: 'no-store' });
+    steps.searchStatus = res.status;
+    const data = await res.json() as { meals?: { idMeal: string; strMeal: string }[] };
+    steps.mealCount = data.meals?.length ?? 0;
+    steps.mealSample = data.meals?.slice(0, 3).map((m) => m.strMeal);
 
-  // Step 4: extract JSON-LD
-  const blocks = html.match(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) ?? [];
-  steps.jsonLdBlocks = blocks.length;
-
-  for (const block of blocks) {
-    const content = block.replace(/<script[^>]+>/i, '').replace(/<\/script>/i, '').trim();
-    try {
-      const data = JSON.parse(content);
-      if (data['@type'] === 'Recipe') {
-        steps.recipeFound = true;
-        steps.recipeName = data.name;
-        steps.recipeIngredientCount = (data.recipeIngredient ?? []).length;
-        steps.recipeIngredientSample = (data.recipeIngredient ?? []).slice(0, 3);
-        steps.prepTime = data.prepTime;
-        break;
-      }
-    } catch {
-      steps.jsonLdParseError = content.slice(0, 100);
+    // Step 3: fetch detail of first meal
+    const firstId = data.meals?.[0]?.idMeal;
+    if (firstId) {
+      const res2 = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${firstId}`, { cache: 'no-store' });
+      const detail = await res2.json() as { meals?: Record<string, string | null>[] };
+      const meal = detail.meals?.[0];
+      steps.detailOk = !!meal;
+      steps.detailName = meal?.strMeal;
+      steps.detailIngredient1 = meal?.strIngredient1;
     }
+  } catch (e) {
+    steps.searchError = String(e);
   }
 
   return NextResponse.json({ ok: true, steps });

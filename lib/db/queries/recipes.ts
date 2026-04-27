@@ -2,7 +2,7 @@ import 'server-only';
 import { eq, and } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { recipes, recipeIngredients } from '@/lib/db/schema';
-import type { ScrapedRecipe } from '@/lib/scrapers/ricardo';
+import type { ScrapedRecipe } from '@/lib/scrapers/themealdb';
 import { normalizeIngredients } from '@/lib/normalize/ingredients';
 
 export async function upsertRecipes(
