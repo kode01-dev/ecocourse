@@ -39,7 +39,7 @@ async function flippGet(path: string): Promise<unknown> {
       'User-Agent': 'Mozilla/5.0 (compatible; EcoCourse/1.0; mailto:emile.d@prosomo.com)',
       Accept: 'application/json',
     },
-    next: { revalidate: 0 },
+    cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Flipp ${res.status}: ${FLIPP_BASE}${path}`);
   return res.json();

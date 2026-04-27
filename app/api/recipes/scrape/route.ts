@@ -42,7 +42,13 @@ export async function POST(req: NextRequest) {
   const { inserted, skipped } = await upsertRecipes(scraped);
 
   console.log(`[recipes/scrape] Done. scraped=${scraped.length} inserted=${inserted} skipped=${skipped}`);
-  return NextResponse.json({ ok: true, scraped: scraped.length, inserted, skipped });
+  return NextResponse.json({
+    ok: true,
+    scraped: scraped.length,
+    inserted,
+    skipped,
+    titles: scraped.slice(0, 5).map((r) => r.title), // preview first 5 for debugging
+  });
 }
 
 export async function GET(req: NextRequest) {

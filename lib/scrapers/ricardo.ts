@@ -13,7 +13,7 @@ async function fetchText(url: string): Promise<string> {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (compatible; EcoCourse/1.0; mailto:emile.d@prosomo.com)',
       'Accept-Language': 'fr-CA,fr;q=0.9',
     },
-    next: { revalidate: 0 },
+    cache: 'no-store',
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
   return res.text();
@@ -82,10 +82,12 @@ async function getRecipeUrlsFromSitemap(sitemapIndex = 1): Promise<string[]> {
   let xml: string;
   try {
     xml = await fetchText(url);
-  } catch {
+  } catch (e) {
+    console.error(`[Ricardo] Sitemap fetch failed (page ${sitemapIndex}):`, e);
     return [];
   }
   const matches = xml.match(/<loc>(https:\/\/www\.ricardocuisine\.com\/recettes\/[^<]+)<\/loc>/g) ?? [];
+  console.log(`[Ricardo] Sitemap page ${sitemapIndex}: ${matches.length} URLs (xml size: ${xml.length})`);
   return matches.map((m) => m.replace(/<\/?loc>/g, ''));
 }
 
